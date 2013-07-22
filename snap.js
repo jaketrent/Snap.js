@@ -163,7 +163,7 @@
                 get: {
                     matrix: function(index) {
 
-                        if( !utils.canTransform() ){
+                        if( !cache.canTransform ){
                             return parseInt(settings.element.style.left, 10);
                         } else {
                             var matrix = win.getComputedStyle(settings.element)[cache.vendor+'Transform'].match(/\((.*)\)/),
@@ -195,7 +195,7 @@
                 },
                 easeTo: function(n) {
 
-                    if( !utils.canTransform() ){
+                    if( !cache.canTransform ){
                         cache.translation = n;
                         action.translate.x(n);
                     } else {
@@ -207,7 +207,7 @@
                         cache.animatingInterval = setInterval(function() {
                             utils.dispatchEvent('animating');
                         }, 1);
-                        
+
                         utils.events.addEvent(settings.element, utils.transitionCallback(), action.translate.easeCallback);
                         action.translate.x(n);
                     }
@@ -219,7 +219,7 @@
                     if( (settings.disable==='left' && n>0) ||
                         (settings.disable==='right' && n<0)
                     ){ return; }
-                    
+
                     if( !settings.hyperextensible ){
                         if( n===settings.maxPosition || n>settings.maxPosition ){
                             n=settings.maxPosition;
@@ -227,13 +227,13 @@
                             n=settings.minPosition;
                         }
                     }
-                    
+
                     n = parseInt(n, 10);
                     if(isNaN(n)){
                         n = 0;
                     }
 
-                    if( utils.canTransform() ){
+                    if( cache.canTransform ){
                         var theTranslate = 'translate3d(' + n + 'px, 0,0)';
                         settings.element.style[cache.vendor+'Transform'] = theTranslate;
                     } else {
@@ -261,27 +261,29 @@
                     // No drag on ignored elements
                     var target = e.target ? e.target : e.srcElement,
                         ignoreParent = utils.parentUntil(target, 'data-snap-ignore');
-                    
+
                     if (ignoreParent) {
                         utils.dispatchEvent('ignore');
                         return;
                     }
-                    
-                    
+
+
                     if(settings.dragger){
                         var dragParent = utils.parentUntil(target, settings.dragger);
-                        
+
                         // Only use dragger if we're in a closed state
-                        if( !dragParent && 
-                            (cache.translation !== settings.minPosition && 
+                        if( !dragParent &&
+                            (cache.translation !== settings.minPosition &&
                             cache.translation !== settings.maxPosition
                         )){
                             return;
                         }
                     }
-                    
+
                     utils.dispatchEvent('start');
-                    settings.element.style[cache.vendor+'Transition'] = '';
+                    if(cache.canTransform) {
+                        settings.element.style[cache.vendor+'Transition'] = '';
+                    }
                     cache.isDragging = true;
                     cache.hasIntent = null;
                     cache.intentChecked = false;
@@ -468,6 +470,7 @@
             if (opts.element) {
                 utils.deepExtend(settings, opts);
                 cache.vendor = utils.vendor();
+                cache.canTransform = utils.canTransform();
                 action.drag.listen();
             }
         };
